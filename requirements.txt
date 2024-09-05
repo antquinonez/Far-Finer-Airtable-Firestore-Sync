@@ -1,0 +1,4 @@
+airtable-python-wrapper
+requests
+pytz
+google-cloud-firestore
