@@ -39,13 +39,13 @@ pip install -r requirements.txt
 3. Set up your Google Cloud credentials:
 gcloud auth application-default login
 
-# Usage
+## Usage
 1.Setup the environment variables AIRTABLE_API_KEY and AIRTABLE_BASE_ID
 2.Edit the "Setup variables" section in the try_it_out.py script
 
 Run: python try_it_out.py
 
-# Update Types
+## Update Types
 The pipeline supports several update strategies:
 
 - FULL_REFRESH: Deletes all existing data in the Firestore collection and replaces it with the current Airtable data.
@@ -55,11 +55,11 @@ The pipeline supports several update strategies:
 - VERSIONED: Creates a new version of each record in Firestore, marking the previous version as not latest.
 - VERSIONED_SET: Creates a new set of all records if any changes are detected, using a version ID. Marks all previous records as not latest.
 
-# Error Handling and Logging
+## Error Handling and Logging
 The pipeline includes comprehensive error handling and logging. Check the logs for detailed information about the synchronization process and any issues that may occur.
 
-# Contributing
+## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-# License
+## License
 This project is licensed under the MIT License - see the LICENSE file for details.
