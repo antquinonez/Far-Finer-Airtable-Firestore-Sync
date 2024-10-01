@@ -53,7 +53,7 @@ The pipeline supports several update strategies:
 - REPLACE: For each record in Airtable, deletes any existing records with the same primary key in Firestore and inserts the new record.
 - SOFT_DELETE: For each record in Airtable, updates the existing record in Firestore if it exists; deletes from FS if the record is not found in Airtable.
 
-<!-- NEED TO DO: -->
+**NEED TO DO**:
 - APPEND: For each record in Airtable, inserts the new record into Firestore.
 
 ### Upsert Strategies
@@ -64,7 +64,7 @@ The pipeline supports several update strategies:
 - VERSIONED: Creates a new version of each record in Firestore, marking the previous record as not latest. Whenever run, this will create a new version of each record in Firestore.
 - VERSIONED_SET: Creates a new set of all records if any changes are detected, using a version ID. Marks all previous records as not latest.
 
-<!-- NEED TO DO: -->
+**NEED TO DO**:
 - VERSIONED_ON_CHANGE: Creates a new version for an item in Firestore if there are changes, marking the previous item as not latest.
 
 ## Error Handling and Logging
