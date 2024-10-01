@@ -16,6 +16,7 @@ class UpdateType(Enum):
 class AirtableConfig:
     base_id: str
     table_name: str
+    view_name: Optional[str] = None
     api_key: Optional[str] = None
 
 @dataclass

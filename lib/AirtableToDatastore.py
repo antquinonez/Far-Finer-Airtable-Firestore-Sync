@@ -26,7 +26,7 @@ class AirtableToDatastore:
         try:
             logger.info("Starting data pipeline")
             
-            airtable_data = self.data_fetcher.fetch_data()
+            airtable_data = self.data_fetcher.fetch_data(view_name=self.config.airtable.view_name)
             logger.info(f"Fetched {len(airtable_data)} records from Airtable")
             
             processed_data = self.process_data(airtable_data)

@@ -1,5 +1,5 @@
 import requests
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from airtable import Airtable
 import logging
 from .AirtablePipelineConfigs import AirtableConfig
@@ -11,9 +11,12 @@ class AirtableDataFetcher:
         self.config = config
         self.airtable = Airtable(config.base_id, config.table_name, api_key=config.api_key)
 
-    def fetch_data(self) -> List[Dict[str, Any]]:
+    def fetch_data(self, view_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Fetches data from Airtable.
+        Fetches data from Airtable, either from the entire table or a specific view.
+
+        Args:
+            view_name (Optional[str]): The name of the view to fetch data from. If None, fetches from the entire table.
 
         Returns:
             List[Dict[str, Any]]: A list of records from the Airtable.
@@ -22,8 +25,12 @@ class AirtableDataFetcher:
             RuntimeError: If there's an error fetching data from Airtable.
         """
         try:
-            data = self.airtable.get_all()
-            logger.info(f"Successfully fetched {len(data)} records from Airtable")
+            if view_name:
+                data = self.airtable.get_all(view=self.config.view_name)
+                logger.info(f"Successfully fetched {len(data)} records from Airtable view '{view_name}'")
+            else:
+                data = self.airtable.get_all()
+                logger.info(f"Successfully fetched {len(data)} records from Airtable table")
             return data
         except Exception as e:
             logger.error(f"Failed to fetch data from Airtable: {e}")
