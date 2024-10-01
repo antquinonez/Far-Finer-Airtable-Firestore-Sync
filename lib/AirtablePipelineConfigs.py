@@ -10,6 +10,7 @@ class UpdateType(Enum):
     SOFT_DELETE = "soft_delete"
     UPSERT_CHECKSUM_WITH_DELETE = "upsert_checksum_with_delete"
     VERSIONED_SET = "versioned_set"
+    VERSIONED_CHECKSUM = "versioned_checksum" 
 
 @dataclass
 class AirtableConfig:

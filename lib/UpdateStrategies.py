@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 from datetime import datetime
+import time
 import logging
 from .AirtablePipelineConfigs import PipelineConfig, UpdateType
 from .FirestoreWrapper import FirestoreWrapper
@@ -9,6 +10,8 @@ import pytz
 from google.cloud import firestore
 
 logger = logging.getLogger(__name__)
+
+version_id = int(datetime.now(pytz.UTC).timestamp())
 
 class BaseUpdateStrategy(ABC):
     def update(self, firestore_wrapper: FirestoreWrapper, data: List[Dict[str, Any]], config: PipelineConfig, data_processor: DataProcessor) -> None:
@@ -116,12 +119,57 @@ class VersionedStrategy(BaseUpdateStrategy):
                 **record,
                 'update_type': config.update_type.value,
                 'write_timestamp': firestore.SERVER_TIMESTAMP,
+                'version': version_id,
                 'start_date': firestore.SERVER_TIMESTAMP,
                 'end_date': None,
                 'latest': True
             }
             logger.debug(f"Adding new versioned document, data types: {[(k, type(v)) for k, v in new_record.items()]}")
             firestore_wrapper.add_document(new_record)
+
+class VersionedChecksumStrategy(BaseUpdateStrategy):
+    def _perform_update(self, firestore_wrapper: FirestoreWrapper, data: List[Dict[str, Any]], config: PipelineConfig, data_processor: DataProcessor) -> None:
+        for record in data:
+            source_fields = set(record.keys())
+            primary_key_value = record[config.primary_key]
+            
+            existing_docs = firestore_wrapper.query_documents(config.primary_key, '==', primary_key_value)
+            
+            if existing_docs:
+                existing_doc = existing_docs[0]
+                new_checksum = data_processor.calculate_checksum(record, source_fields)
+                existing_checksum = data_processor.calculate_checksum(existing_doc, source_fields)
+                
+                if new_checksum != existing_checksum:
+                    # Update the existing document to set 'latest' to False
+                    firestore_wrapper.update_document(existing_doc['id'], {'latest': False})
+                    
+                    # Create a new version of the document
+                    new_record = {
+                        **record,
+                        'update_type': config.update_type.value,
+                        'write_timestamp': firestore.SERVER_TIMESTAMP,
+                        'version': version_id,
+                        'latest': True
+                    }
+                    logger.debug(f"Adding new version of document, data types: {[(k, type(v)) for k, v in new_record.items()]}")
+                    firestore_wrapper.add_document(new_record)
+                    logger.info(f"Created new version of document with {config.primary_key}: {primary_key_value}")
+                else:
+                    logger.debug(f"No changes detected for document with {config.primary_key}: {primary_key_value}. Skipping update.")
+            else:
+                # This is a new record, create it with version 1
+                new_record = {
+                    **record,
+                    'update_type': config.update_type.value,
+                    'write_timestamp': firestore.SERVER_TIMESTAMP,
+                    'version': version_id,
+                    'latest': True
+                }
+                logger.debug(f"Adding new document, data types: {[(k, type(v)) for k, v in new_record.items()]}")
+                firestore_wrapper.add_document(new_record)
+                logger.info(f"Inserted new document with {config.primary_key}: {primary_key_value}")
+
 
 class UpsertChecksumStrategy(BaseUpdateStrategy):
     def _perform_update(self, firestore_wrapper: FirestoreWrapper, data: List[Dict[str, Any]], config: PipelineConfig, data_processor: DataProcessor) -> None:
@@ -203,7 +251,6 @@ class UpsertChecksumWithDeleteStrategy(BaseUpdateStrategy):
 
 class VersionedSetStrategy(BaseUpdateStrategy):
     def _perform_update(self, firestore_wrapper: FirestoreWrapper, data: List[Dict[str, Any]], config: PipelineConfig, data_processor: DataProcessor) -> None:
-        version_id = int(datetime.now(pytz.UTC).timestamp())
         
         existing_docs = firestore_wrapper.query_documents('latest', '==', True)
         existing_data = {doc[config.primary_key]: doc for doc in existing_docs}
@@ -261,7 +308,8 @@ class UpdateStrategyFactory:
         UpdateType.SOFT_DELETE: SoftDeleteStrategy,
         UpdateType.UPSERT_CHECKSUM: UpsertChecksumStrategy,
         UpdateType.UPSERT_CHECKSUM_WITH_DELETE: UpsertChecksumWithDeleteStrategy,
-        UpdateType.VERSIONED_SET: VersionedSetStrategy
+        UpdateType.VERSIONED_SET: VersionedSetStrategy,
+        UpdateType.VERSIONED_CHECKSUM: VersionedChecksumStrategy
     }
 
     @classmethod
