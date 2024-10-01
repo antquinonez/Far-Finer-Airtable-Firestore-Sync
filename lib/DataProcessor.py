@@ -110,6 +110,7 @@ class DataProcessor:
         filtered_record = {k: self.normalize_value_for_comparison(record.get(k)) for k in fields if k in record}
         sorted_items = [(k, filtered_record[k]) for k in sorted(filtered_record.keys())]
         record_string = json.dumps(sorted_items, sort_keys=True, default=self._json_serializer).encode('utf-8')
+        logger.debug(f"Record string for checksum calculation: {record_string}")
         return hashlib.md5(record_string).hexdigest()
 
     def _json_serializer(self, obj):
