@@ -133,42 +133,71 @@ class VersionedChecksumStrategy(BaseUpdateStrategy):
             source_fields = set(record.keys())
             primary_key_value = record[config.primary_key]
             
+            # Query all existing versions of the document
             existing_docs = firestore_wrapper.query_documents(config.primary_key, '==', primary_key_value)
             
+            # Sort existing documents by version_id in descending order
+            existing_docs.sort(key=lambda x: x.get('version_id', 0), reverse=True)
+            
+            new_checksum = data_processor.calculate_checksum(record, source_fields)
+            
             if existing_docs:
-                existing_doc = existing_docs[0]
-                new_checksum = data_processor.calculate_checksum(record, source_fields)
-                existing_checksum = data_processor.calculate_checksum(existing_doc, source_fields)
+                latest_doc = existing_docs[0]
+                existing_checksum = data_processor.calculate_checksum(latest_doc, source_fields)
                 
                 if new_checksum != existing_checksum:
-                    # Update the existing document to set 'latest' to False
-                    firestore_wrapper.update_document(existing_doc['id'], {'latest': False})
-                    
-                    # Create a new version of the document
-                    new_record = {
-                        **record,
-                        'update_type': config.update_type.value,
-                        'write_timestamp': firestore.SERVER_TIMESTAMP,
-                        'version': version_id,
-                        'latest': True
-                    }
-                    logger.debug(f"Adding new version of document, data types: {[(k, type(v)) for k, v in new_record.items()]}")
-                    firestore_wrapper.add_document(new_record)
-                    logger.info(f"Created new version of document with {config.primary_key}: {primary_key_value}")
+                    self._create_new_version(firestore_wrapper, record, config, existing_docs)
                 else:
                     logger.debug(f"No changes detected for document with {config.primary_key}: {primary_key_value}. Skipping update.")
             else:
-                # This is a new record, create it with version 1
-                new_record = {
-                    **record,
-                    'update_type': config.update_type.value,
-                    'write_timestamp': firestore.SERVER_TIMESTAMP,
-                    'version': version_id,
-                    'latest': True
-                }
-                logger.debug(f"Adding new document, data types: {[(k, type(v)) for k, v in new_record.items()]}")
-                firestore_wrapper.add_document(new_record)
-                logger.info(f"Inserted new document with {config.primary_key}: {primary_key_value}")
+                self._create_new_version(firestore_wrapper, record, config, [])
+            
+    def _create_new_version(self, firestore_wrapper: FirestoreWrapper, record: Dict[str, Any], config: PipelineConfig, existing_docs: List[Dict[str, Any]]) -> None:
+        new_version = {
+            **record,
+            'update_type': config.update_type.value,
+            'write_timestamp': firestore.SERVER_TIMESTAMP,
+            'version_id': version_id,
+            'latest': True
+        }
+        
+        # Create the new version
+        new_doc_id = firestore_wrapper.add_document(new_version)
+        logger.info(f"Created new version of document with {config.primary_key}: {record[config.primary_key]}")
+        
+        # Update existing versions
+        batch_operations = []
+        for doc in existing_docs:
+            if doc.get('latest', False):
+                batch_operations.append({
+                    'operation': 'update',
+                    'doc_id': doc['id'],
+                    'data': {'latest': False}
+                })
+        
+        if batch_operations:
+            firestore_wrapper.batch_write(batch_operations)
+            logger.info(f"Updated 'latest' flag for {len(batch_operations)} existing versions")
+
+    def update(self, firestore_wrapper: FirestoreWrapper, data: List[Dict[str, Any]], config: PipelineConfig, data_processor: DataProcessor) -> None:
+        logger.info(f"Starting {self.__class__.__name__} update")
+        
+        self._perform_update(firestore_wrapper, data, config, data_processor)
+        
+        # Handle deletions (documents in Firestore that are not in the new data)
+        existing_docs = firestore_wrapper.query_documents('update_type', '==', config.update_type.value)
+        existing_keys = set(doc[config.primary_key] for doc in existing_docs)
+        new_keys = set(record[config.primary_key] for record in data)
+        
+        # keys_to_delete = existing_keys - new_keys
+        
+        # for key in keys_to_delete:
+        #     docs_to_delete = firestore_wrapper.query_documents(config.primary_key, '==', key)
+        #     for doc in docs_to_delete:
+        #         firestore_wrapper.delete_document(doc['id'])
+        #         logger.info(f"Deleted document with {config.primary_key}: {key}")
+        
+        logger.info(f"Completed {self.__class__.__name__} update of {len(data)} records in Firestore")
 
 
 class UpsertChecksumStrategy(BaseUpdateStrategy):
