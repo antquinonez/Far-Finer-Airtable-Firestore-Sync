@@ -1,4 +1,4 @@
-# Airtable-Firestore-Sync
+# Far-Finer-Airtable-Firestore-Sync
 A Python-based ETL pipeline for synchronizing data between Airtable and Google Cloud Firestore. This project offers flexible update strategies to easily manage data flow between these two platforms.
 
 ## Status
