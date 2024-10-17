@@ -146,3 +146,23 @@ class DataProcessor:
             return value
         else:
             raise ValueError(f"Unexpected type for datetime value: {type(value)}")
+        
+    def calculate_table_checksum(self, table_data: Dict[str, Dict[str, Any]], metadata: Dict[str, str]) -> str:
+        """
+        Calculates a checksum for the entire table data, including metadata.
+
+        Args:
+            table_data (Dict[str, Dict[str, Any]]): The table data with primary keys as outer keys.
+            metadata (Dict[str, str]): Metadata including table name and view name.
+
+        Returns:
+            str: The calculated checksum.
+        """
+        data_for_checksum = {
+            'metadata': metadata,
+            'data': table_data
+        }
+        
+        sorted_table_data = json.dumps(data_for_checksum, sort_keys=True, default=self._json_serializer)
+        logger.debug(f"Table data for checksum calculation: {sorted_table_data}")
+        return hashlib.md5(sorted_table_data.encode('utf-8')).hexdigest()

@@ -2,3 +2,5 @@ airtable-python-wrapper
 requests
 pytz
 google-cloud-firestore
+google-cloud-secret-manager
+google-cloud-resource-manager

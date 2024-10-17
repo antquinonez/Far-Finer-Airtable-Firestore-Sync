@@ -11,6 +11,8 @@ class UpdateType(Enum):
     UPSERT_CHECKSUM_WITH_DELETE = "upsert_checksum_with_delete"
     VERSIONED_SET = "versioned_set"
     VERSIONED_CHECKSUM = "versioned_checksum" 
+    VERSIONED_TABLE_CHECKSUM = "versioned_table_checksum"
+    UPSERT_TABLE_CHECKSUM = "upsert_table_checksum" 
 
 @dataclass
 class AirtableConfig:

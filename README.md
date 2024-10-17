@@ -45,7 +45,7 @@ gcloud auth application-default login
 
 Run: python try_it_out.py
 
-## Update Types
+## Record Level - Update Types
 The pipeline supports several update strategies:
 
 ### Basic Strategies
@@ -69,6 +69,13 @@ The pipeline supports several update strategies:
 - VERSIONED_CHECKSUM: Creates a new version for an item in Firestore if there are changes, marking the previous versions as not latest.
 
 - VERSIONED_SET: Creates a new set of all records if any changes are detected, using a version ID. Marks all previous records as not latest.
+
+## Table Level - Update Types
+Read: Record multiple Airtable records as single record
+
+- VERSIONED_TABLE_CHECKSUM: Creates a new versioned record for the table if there's a change in the airtable table
+
+- UPSERT_TABLE_CHECKSUM: Updates a record if there's a change in the airtable table
 
 ## Error Handling and Logging
 The pipeline includes comprehensive error handling and logging. Check the logs for detailed information about the synchronization process and any issues that may occur.

@@ -1,8 +1,13 @@
-from google.cloud import firestore
-from typing import List, Dict, Any, Optional
-import logging
-from datetime import datetime
+import json
+import hashlib
 import pytz
+import logging
+
+from typing import List, Dict, Any, Optional
+from datetime import datetime
+
+from google.cloud import firestore
+
 from .AirtablePipelineConfigs import DatastoreConfig
 logger = logging.getLogger(__name__)
 
@@ -63,7 +68,13 @@ class FirestoreWrapper:
     def get_document(self, doc_id: str) -> Optional[Dict[str, Any]]:
         try:
             doc = self.client.collection(self.config.kind).document(doc_id).get()
-            return {'id': doc.id, **doc.to_dict()} if doc.exists else None
+            if doc.exists:
+                doc_data = {'id': doc.id, **doc.to_dict()}
+                logger.debug(f"Retrieved document {doc_id}: {json.dumps(doc_data, default=str)}")
+                return doc_data
+            else:
+                logger.debug(f"Document {doc_id} does not exist")
+                return None
         except Exception as e:
             logger.error(f"Error retrieving document {doc_id}: {e}")
             raise RuntimeError(f"Error retrieving document {doc_id}: {e}")
@@ -106,3 +117,49 @@ class FirestoreWrapper:
         except Exception as e:
             logger.error(f"Error performing batch write: {e}")
             raise RuntimeError(f"Error performing batch write: {e}")
+        
+    def query_all_versions(self, update_type: str) -> List[Dict[str, Any]]:
+        try:
+            docs = self.client.collection(self.config.kind).where('update_type', '==', update_type).order_by('version_id', direction=firestore.Query.DESCENDING).get()
+            return [{'id': doc.id, **doc.to_dict()} for doc in docs]
+        except Exception as e:
+            logger.error(f"Error querying all versions: {e}")
+            raise RuntimeError(f"Error querying all versions: {e}")
+        
+    def add_document_with_id(self, doc_id: str, data: Dict[str, Any]) -> None:
+        try:
+            if 'write_timestamp' in data:
+                data['write_timestamp'] = self.SERVER_TIMESTAMP
+            self.client.collection(self.config.kind).document(doc_id).set(data)
+            logger.debug(f"Added new document with ID: {doc_id}")
+        except Exception as e:
+            logger.error(f"Error adding document with ID {doc_id}: {e}")
+            raise RuntimeError(f"Error adding document with ID {doc_id}: {e}")
+
+    def set_document(self, doc_id: str, data: Dict[str, Any]) -> None:
+        try:
+            doc_ref = self.client.collection(self.config.kind).document(doc_id)
+            
+            # Log the document state before deletion
+            existing_doc = doc_ref.get()
+            if existing_doc.exists:
+                logger.debug(f"Existing document {doc_id} before deletion: {json.dumps(existing_doc.to_dict(), default=str)}")
+            
+            # First, delete the existing document if it exists
+            delete_result = doc_ref.delete()
+            logger.debug(f"Delete operation result: {delete_result}")
+            
+            # Then, set the new data
+            if 'write_timestamp' in data:
+                data['write_timestamp'] = self.SERVER_TIMESTAMP
+            set_result = doc_ref.set(data)
+            logger.debug(f"Set operation result: {set_result}")
+            
+            # Log the document state after setting new data
+            updated_doc = doc_ref.get()
+            logger.debug(f"Updated document {doc_id}: {json.dumps(updated_doc.to_dict(), default=str)}")
+            
+            logger.info(f"Successfully set document with ID: {doc_id}")
+        except Exception as e:
+            logger.error(f"Error setting document with ID {doc_id}: {e}")
+            raise RuntimeError(f"Error setting document with ID {doc_id}: {e}")
