@@ -24,14 +24,14 @@ class AirtableToDatastoreBuilder:
         if not all([base_id, table_name, api_key]):
             raise ValueError("All configurations must be set before building")
 
-        self._airtable_config = AirtableConfig(base_id, table_name, view_name, api_key)
+        self._airtable_config = AirtableConfig(base_id=base_id, table_name=table_name, view_name=view_name, api_key=api_key)
         return self
 
     def with_datastore_config(self, project_id: str, kind: str, database_id: str) -> 'AirtableToDatastoreBuilder':
         if not all([project_id, database_id, kind]):
             raise ValueError("All configurations must be set before building")
         
-        self._datastore_config = DatastoreConfig(project_id, kind, database_id)
+        self._datastore_config = DatastoreConfig(project_id=project_id, database_id=database_id, kind=kind)
         return self
     
     def with_primary_key(self, primary_key: str) -> 'AirtableToDatastoreBuilder':
@@ -49,7 +49,7 @@ class AirtableToDatastoreBuilder:
         self._update_type = update_type
         return self
 
-    def build(self) -> 'AirtableToDatastore':
+    def build(self) -> PipelineConfig:
         if not all([self._airtable_config, self._datastore_config, self._primary_key, self._update_type]):
             raise ValueError("All configurations must be set before building")
         
@@ -58,8 +58,7 @@ class AirtableToDatastoreBuilder:
         if not all([config.primary_key, config.airtable.base_id, config.airtable.table_name, config.datastore.project_id, config.datastore.kind]):
             raise ValueError("All configurations must be set before building")
 
-
-        return AirtableToDatastore(config)
+        return config
 
 
 # def main():

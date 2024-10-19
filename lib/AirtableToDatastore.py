@@ -21,6 +21,10 @@ class AirtableToDatastore:
         self.data_processor = DataProcessor(self.data_fetcher.fetch_field_types())
         self.update_strategy = UpdateStrategyFactory.get_strategy(config.update_type)
 
+    def validate(self):
+        if not all([self.base_id, self.table_name, self.api_key]):
+            raise ValueError("All Airtable configurations must be set")     
+
     def run_pipeline(self) -> None:
         """
         Execute the entire data pipeline from Airtable to Firestore.

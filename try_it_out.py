@@ -61,16 +61,12 @@ primary_key = os.getenv('AT_CANDIDATE_EVAL_PK')
 
 update_type = UpdateType.UPSERT_TABLE_CHECKSUM
 
-# Create configuration
-airtable_config = AirtableConfig(base_id=base_id, table_name=source_table, view_name=source_view, api_key=api_key)
-datastore_config = DatastoreConfig(project_id=project_id, database_id=database_id, kind=datastore_collection)
-
-pipeline = (AirtableToDatastoreBuilder()
-            .with_airtable_config(base_id, source_table, source_view, api_key)
-            .with_datastore_config(project_id, datastore_collection, database_id)
-            .with_primary_key(primary_key)
-            .with_update_type(update_type)
-            .build())
+pipeline_config = (AirtableToDatastoreBuilder()
+    .with_airtable_config(base_id=base_id, table_name=source_table, view_name=source_view, api_key=api_key)
+    .with_datastore_config(project_id=project_id, database_id=database_id, kind=datastore_collection)
+    .with_primary_key(primary_key)
+    .with_update_type(update_type)
+    .build())
 
 # Create and run the pipeline
 pipeline = AirtableToDatastore(pipeline_config)
