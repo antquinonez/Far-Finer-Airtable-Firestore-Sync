@@ -10,9 +10,12 @@ from .AirtablePipelineConfigs import PipelineConfig
 
 logger = logging.getLogger(__name__)
 
+
 class AirtableToDatastore:
     def __init__(self, config: PipelineConfig):
+        config.validate()
         self.config = config
+
         self.firestore_wrapper = FirestoreWrapper(config.datastore)
         self.data_fetcher = AirtableDataFetcher(config.airtable)
         self.data_processor = DataProcessor(self.data_fetcher.fetch_field_types())

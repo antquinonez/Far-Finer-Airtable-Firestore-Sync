@@ -21,11 +21,19 @@ class AirtableConfig:
     view_name: Optional[str] = None
     api_key: Optional[str] = None
 
+    def validate(self):
+        if not all([self.base_id, self.table_name, self.api_key]):
+            raise ValueError("All Airtable configurations must be set")
+
 @dataclass
 class DatastoreConfig:
     project_id: str
     database_id: str 
     kind: str
+
+    def validate(self):
+        if not all([self.project_id, self.database_id, self.kind]):
+            raise ValueError("All Datastore configurations must be set")
 
 @dataclass
 class PipelineConfig:
@@ -33,3 +41,9 @@ class PipelineConfig:
     datastore: DatastoreConfig
     primary_key: str
     update_type: UpdateType
+
+    def validate(self):
+        if not all([self.airtable, self.datastore, self.primary_key, self.update_type]):
+            raise ValueError("All configurations must be set")
+        self.airtable.validate()
+        self.datastore.validate()

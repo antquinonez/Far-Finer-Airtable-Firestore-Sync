@@ -347,6 +347,8 @@ class VersionedSetStrategy(BaseUpdateStrategy):
 # =============================================================================================================================================================
 # TABLES
 # =============================================================================================================================================================
+
+# TODO: make view optional. if not passed, then use full table
 class BaseTableChecksumStrategy(BaseUpdateStrategy, ABC):
     def _filter_data_by_view(self, airtable_config: AirtableConfig) -> Tuple[List[Dict[str, Any]], Set[str]]:
         api_key = os.environ.get('AIRTABLE_API_KEY') or airtable_config.api_key
