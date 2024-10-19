@@ -17,6 +17,10 @@ from google.cloud import firestore_v1
 class FirestoreWrapper:
     def __init__(self, config: DatastoreConfig):
         self.config = config
+
+        if not all([self.config.project_id, self.config.database_id, self.config.kind]):
+            raise ValueError("All configurations must be set before building")
+
         self.client = self._get_firestore_client()
         self.SERVER_TIMESTAMP = firestore_v1.SERVER_TIMESTAMP
 
