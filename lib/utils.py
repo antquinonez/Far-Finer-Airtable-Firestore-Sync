@@ -20,6 +20,34 @@ def exclude_keys(data, keys_to_exclude):
     elif isinstance(data, list):
         return [exclude_keys(item, keys_to_exclude) for item in data]
     else:
-        data = re.sub(r"[\n\t\s]+", " ", data)
+        data = re.sub(r"[\t]+", "", data)
+        data = data.strip()
         return data
-    
+
+
+ def write_dict_to_csv(json_string, filename):
+    # Parse the JSON string into a Python dictionary
+    data = json.loads(json_string)
+
+    # Check if the data is empty
+    if not data:
+        print("The data dictionary is empty.")
+        return
+
+    # Get all possible fieldnames from all nested dictionaries
+    fieldnames = set()
+    for nested_dict in data.values():
+        fieldnames.update(nested_dict.keys())
+    fieldnames = list(fieldnames)
+
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, extrasaction='ignore')
+        
+        # Write the header
+        writer.writeheader()
+        
+        # Write the rows
+        for nested_dict in data.values():
+            writer.writerow(nested_dict)
+
+    print(f"CSV file '{filename}' has been created successfully.")  
