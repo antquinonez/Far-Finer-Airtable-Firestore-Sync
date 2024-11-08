@@ -6,25 +6,28 @@ from glom import glom, T, SKIP
 
 def exclude_keys(data, keys_to_exclude):
     """Recursively removes specified keys from a dictionary or list.
-
+    
     Args:
-        data (dict or list): The data structure to process.
-        keys_to_exclude (list): A list of keys to exclude.
-
+        data: The data structure to process (dict, list, or primitive type)
+        keys_to_exclude (list): List of keys to exclude from dictionaries
+        
     Returns:
-        dict or list: The data structure with the specified keys removed.
+        The data structure with the specified keys removed.
     """
     if isinstance(data, dict):
         return {
-            key: exclude_keys(value, keys_to_exclude)
-            for key, value in data.items()
+            key: exclude_keys(value, keys_to_exclude) 
+            for key, value in data.items() 
             if key not in keys_to_exclude
         }
     elif isinstance(data, list):
         return [exclude_keys(item, keys_to_exclude) for item in data]
+    elif isinstance(data, str):
+        # Only process strings with regex
+        import re
+        return re.sub(r"[\t]+", "", data).strip()
     else:
-        data = re.sub(r"[\t]+", "", data)
-        data = data.strip()
+        # Return all other types (int, float, bool, etc.) as-is
         return data
 
 
