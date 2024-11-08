@@ -81,7 +81,7 @@ class DataProcessor:
                 skipped_count += 1
                 continue
             
-            created_date = self._parse_datetime(record['Created'])
+            created_date = self._parse_datetime(record['Created']) if 'Created' in record else datetime.now()
             
             if name in name_dict:
                 existing_date = self._parse_datetime(name_dict[name]['Created'])
