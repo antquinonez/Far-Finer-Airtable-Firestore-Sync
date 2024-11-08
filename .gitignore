@@ -1,3 +1,7 @@
 .venv
 .env
 *_DONOTSHARE.ipynb
+candidate_evaulation_rules.csv
+candidate_evaulation_rules.json
+hiring_strategy_rules.csv
+hiring_strategy_rules.json
